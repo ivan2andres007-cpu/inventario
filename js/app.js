@@ -755,8 +755,17 @@ document.addEventListener('DOMContentLoaded', () => {
   // --- Service Worker & Instalación PWA ---
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js').then((reg) => {
+      navigator.serviceWorker.register('./sw.js?v=3').then((reg) => {
         console.log('[SW] Service Worker activo en:', reg.scope);
+        reg.update();
+        reg.addEventListener('updatefound', () => {
+          const newWorker = reg.installing;
+          newWorker.addEventListener('statechange', () => {
+            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+              window.location.reload();
+            }
+          });
+        });
       }).catch((err) => {
         console.warn('[SW] No se pudo registrar:', err);
       });

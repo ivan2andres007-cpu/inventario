@@ -119,8 +119,13 @@ class SimpleDB {
     merged.sort((a, b) => a.localeCompare(b, 'es', { sensitivity: 'base' }));
     localStorage.setItem(STORAGE_STUDENTS, JSON.stringify(merged));
 
-    // Asegurar préstamos iniciales
-    if (!localStorage.getItem(STORAGE_LOANS)) {
+    // Asegurar préstamos oficiales (reemplazando datos de prueba viejos con "Lucas Martínez" si existieran)
+    try {
+      const storedLoans = JSON.parse(localStorage.getItem(STORAGE_LOANS));
+      if (!storedLoans || (Array.isArray(storedLoans) && storedLoans.some(l => l.borrower === 'Lucas Martínez'))) {
+        localStorage.setItem(STORAGE_LOANS, JSON.stringify(DEFAULT_LOANS));
+      }
+    } catch (e) {
       localStorage.setItem(STORAGE_LOANS, JSON.stringify(DEFAULT_LOANS));
     }
   }

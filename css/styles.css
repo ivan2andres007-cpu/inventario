@@ -533,12 +533,25 @@ body {
 .btn-clear-student-search {
   position: absolute;
   right: 12px;
-  background: none;
-  border: none;
+  width: 26px;
+  height: 26px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-full);
   color: var(--text-tertiary);
+  font-size: 12px;
   cursor: pointer;
-  padding: 4px;
+  padding: 0;
   display: none;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
+
+.btn-clear-student-search:hover, .btn-clear-student-search:active {
+  color: var(--text-main);
+  background: var(--bg-card-hover);
+  border-color: var(--border-hover);
 }
 
 /* Lista / Panel de Selección de Alumnos (Optimizado para Celulares de Gama Baja) */
@@ -651,21 +664,25 @@ body {
 }
 
 .btn-remove-selected-student {
-  background: none;
-  border: none;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--border-subtle);
   color: var(--text-secondary);
-  font-size: 13px;
-  font-weight: 600;
+  font-size: 12.5px;
+  font-weight: 700;
   cursor: pointer;
-  padding: 4px 8px;
+  padding: 6px 12px;
   border-radius: var(--radius-xs);
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 5px;
+  transition: all 0.15s ease;
+  font-family: inherit;
 }
 
-.btn-remove-selected-student:hover {
+.btn-remove-selected-student:hover, .btn-remove-selected-student:active {
+  background: rgba(244, 63, 94, 0.15);
   color: var(--accent-rose);
+  border-color: rgba(244, 63, 94, 0.3);
 }
 
 /* Buscador Superior en Lista de Préstamos */

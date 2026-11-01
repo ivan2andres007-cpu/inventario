@@ -2,14 +2,14 @@
  * sw.js - Service Worker para Funcionamiento 100% Offline e Instalación PWA
  */
 
-const CACHE_NAME = 'control-herramientas-v2';
+const CACHE_NAME = 'control-herramientas-v3';
 const STATIC_ASSETS = [
   './',
   './index.html',
-  './css/styles.css?v=2',
-  './js/db.js?v=2',
-  './js/excel.js?v=2',
-  './js/app.js?v=2',
+  './css/styles.css?v=3',
+  './js/db.js?v=3',
+  './js/excel.js?v=3',
+  './js/app.js?v=3',
   './lib/xlsx.full.min.js',
   './manifest.json',
   './assets/icon-192.png',
