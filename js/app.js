@@ -1,11 +1,13 @@
 /**
- * app.js - Lógica de Interfaz Profesional y Minimalista (Colegio)
+ * app.js - Lógica de Interfaz Profesional y Minimalista con Buscador de Alumnos
  */
 
 document.addEventListener('DOMContentLoaded', () => {
   // Estado local
   let loanUnderReturn = null;
   let returnChoice = 'same'; // 'same' | 'other'
+  let selectedBorrowerName = null;
+  let activeLoansFilterQuery = '';
   const selectedToolNames = new Set();
 
   // --- Toast Discreto HUD ---
@@ -17,8 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
     toastText.textContent = message;
     toast.style.display = 'flex';
     toast.style.animation = 'none';
-    // Forzar reflow para reiniciar animación
-    toast.offsetHeight;
+    toast.offsetHeight; // Forzar reflow
     toast.style.animation = 'slideDownToast 0.25s cubic-bezier(0.16, 1, 0.3, 1)';
 
     setTimeout(() => {
@@ -26,7 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 2800);
   }
 
-  // --- Iniciales para el Avatar de la Persona ---
+  // --- Iniciales para el Avatar ---
   function getInitials(name) {
     if (!name) return '??';
     const parts = name.trim().split(' ').filter(Boolean);
@@ -64,9 +65,15 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
 
-    // Cargar contenido
     if (tabKey === 'active') renderActiveLoans();
-    if (tabKey === 'loan') renderLoanAvailableTags();
+    if (tabKey === 'loan') {
+      renderLoanAvailableTags();
+      // Si no hay alumno seleccionado, enfocar el buscador
+      if (!selectedBorrowerName) {
+        const inputSearch = document.getElementById('input-search-student');
+        if (inputSearch) renderStudentDropdown('');
+      }
+    }
     if (tabKey === 'tools') renderToolsCatalog();
     if (tabKey === 'history') renderHistoryLog();
     updateCounterBadge();
@@ -88,12 +95,40 @@ document.addEventListener('DOMContentLoaded', () => {
   // ===============================================================
   // 1. RENDERIZAR PRÉSTAMOS ACTIVOS (Agrupados por Persona)
   // ===============================================================
+  const inputFilterLoans = document.getElementById('input-filter-loans');
+  const btnClearLoansFilter = document.getElementById('btn-clear-loans-filter');
+
+  inputFilterLoans?.addEventListener('input', (e) => {
+    activeLoansFilterQuery = e.target.value.trim().toLowerCase();
+    if (btnClearLoansFilter) {
+      btnClearLoansFilter.style.display = activeLoansFilterQuery ? 'block' : 'none';
+    }
+    renderActiveLoans();
+  });
+
+  btnClearLoansFilter?.addEventListener('click', () => {
+    inputFilterLoans.value = '';
+    activeLoansFilterQuery = '';
+    btnClearLoansFilter.style.display = 'none';
+    inputFilterLoans.focus();
+    renderActiveLoans();
+  });
+
   function renderActiveLoans() {
     const container = document.getElementById('container-active-loans');
     if (!container) return;
 
-    const activeLoans = window.db.getActiveLoans();
+    let activeLoans = window.db.getActiveLoans();
     updateCounterBadge();
+
+    // Filtro en vivo si el usuario busca por nombre o herramienta
+    if (activeLoansFilterQuery) {
+      const q = activeLoansFilterQuery;
+      activeLoans = activeLoans.filter(l => 
+        l.borrower.toLowerCase().includes(q) || 
+        l.toolName.toLowerCase().includes(q)
+      );
+    }
 
     if (activeLoans.length === 0) {
       container.innerHTML = `
@@ -103,8 +138,8 @@ document.addEventListener('DOMContentLoaded', () => {
               <polyline points="20 6 9 17 4 12"></polyline>
             </svg>
           </div>
-          <h4>Todas las herramientas están en pañol</h4>
-          <p>No hay herramientas prestadas en este momento.</p>
+          <h4>${activeLoansFilterQuery ? 'No hay coincidencias' : 'Todas las herramientas están en pañol'}</h4>
+          <p>${activeLoansFilterQuery ? 'Prueba con otro nombre o herramienta' : 'No hay herramientas prestadas en este momento.'}</p>
         </div>
       `;
       return;
@@ -167,7 +202,87 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // ===============================================================
-  // 2. FORMULARIO DE PRÉSTAMO
+  // 2. BUSCADOR DE ALUMNOS (SELECCIÓN RÁPIDA DE LA LISTA OFICIAL)
+  // ===============================================================
+  const inputSearchStudent = document.getElementById('input-search-student');
+  const dropdownStudents = document.getElementById('dropdown-students-list');
+  const bannerSelected = document.getElementById('banner-selected-student');
+  const bannerStudentName = document.getElementById('banner-student-name');
+  const bannerStudentAvatar = document.getElementById('banner-student-avatar');
+  const btnRemoveSelected = document.getElementById('btn-remove-selected-student');
+  const btnClearSearch = document.getElementById('btn-clear-student-search');
+  const studentSearchWrapper = document.getElementById('student-search-wrapper');
+
+  function renderStudentDropdown(query = '') {
+    if (!dropdownStudents) return;
+    const results = window.db.searchStudents(query);
+
+    if (results.length === 0) {
+      dropdownStudents.innerHTML = `
+        <div style="padding: 12px 14px; font-size: 13px; color: var(--text-tertiary); text-align: center;">
+          No encontrado en la lista. Puedes escribir su nombre libremente.
+        </div>
+      `;
+    } else {
+      dropdownStudents.innerHTML = results.map(name => `
+        <div class="student-dropdown-item" data-student-pick="${name}">
+          <div class="student-dropdown-avatar">${getInitials(name)}</div>
+          <span class="student-dropdown-name">${name}</span>
+        </div>
+      `).join('');
+    }
+    dropdownStudents.classList.add('open');
+  }
+
+  function selectBorrower(name) {
+    selectedBorrowerName = name;
+    bannerStudentName.textContent = name;
+    bannerStudentAvatar.textContent = getInitials(name);
+    bannerSelected.classList.add('visible');
+    studentSearchWrapper.style.display = 'none';
+    dropdownStudents.classList.remove('open');
+  }
+
+  function unselectBorrower() {
+    selectedBorrowerName = null;
+    bannerSelected.classList.remove('visible');
+    studentSearchWrapper.style.display = 'block';
+    inputSearchStudent.value = '';
+    btnClearSearch.style.display = 'none';
+    inputSearchStudent.focus();
+    renderStudentDropdown('');
+  }
+
+  inputSearchStudent?.addEventListener('focus', () => {
+    renderStudentDropdown(inputSearchStudent.value);
+  });
+
+  inputSearchStudent?.addEventListener('input', (e) => {
+    const val = e.target.value;
+    btnClearSearch.style.display = val ? 'block' : 'none';
+    renderStudentDropdown(val);
+  });
+
+  btnClearSearch?.addEventListener('click', () => {
+    inputSearchStudent.value = '';
+    btnClearSearch.style.display = 'none';
+    renderStudentDropdown('');
+    inputSearchStudent.focus();
+  });
+
+  dropdownStudents?.addEventListener('click', (e) => {
+    const item = e.target.closest('[data-student-pick]');
+    if (!item) return;
+    const name = item.getAttribute('data-student-pick');
+    selectBorrower(name);
+  });
+
+  btnRemoveSelected?.addEventListener('click', () => {
+    unselectBorrower();
+  });
+
+  // ===============================================================
+  // 3. SELECCIÓN DE HERRAMIENTAS Y CONFIRMAR PRÉSTAMO
   // ===============================================================
   function renderLoanAvailableTags() {
     const grid = document.getElementById('grid-available-tools');
@@ -227,24 +342,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Confirmar Préstamo
   document.getElementById('btn-confirm-loan')?.addEventListener('click', () => {
-    const borrowerInput = document.getElementById('input-borrower-name');
     const customToolInput = document.getElementById('input-custom-tool');
 
-    const borrower = borrowerInput.value.trim();
+    // Nombre: o el alumno seleccionado en el buscador o lo que escribió directamente
+    const borrower = selectedBorrowerName || (inputSearchStudent ? inputSearchStudent.value.trim().toUpperCase() : '');
+
     if (!borrower) {
-      alert('Ingresa el nombre de quién retira la herramienta.');
-      borrowerInput.focus();
+      alert('Por favor busca y selecciona el alumno que se lleva la herramienta.');
+      if (inputSearchStudent) {
+        inputSearchStudent.focus();
+        renderStudentDropdown('');
+      }
       return;
     }
 
     const toolsList = Array.from(selectedToolNames);
-    const customTool = customToolInput.value.trim();
+    const customTool = customToolInput ? customToolInput.value.trim() : '';
     if (customTool) {
       toolsList.push(customTool);
     }
 
     if (toolsList.length === 0) {
-      alert('Selecciona al menos una herramienta o escribe su nombre.');
+      alert('Toca al menos una herramienta disponible o escribe una nueva.');
       return;
     }
 
@@ -252,11 +371,12 @@ document.addEventListener('DOMContentLoaded', () => {
       window.db.registerLoan(borrower, toolsList);
       showToast(`Préstamo registrado a ${borrower}`);
 
-      borrowerInput.value = '';
-      customToolInput.value = '';
+      // Resetear campos
+      unselectBorrower();
+      if (customToolInput) customToolInput.value = '';
       selectedToolNames.clear();
 
-      // Cambiar a la vista "En préstamo" para ver de inmediato lo que se llevó
+      // Cambiar de inmediato a la pestaña de prestadas
       switchTab('active');
     } catch (err) {
       alert(err.message);
@@ -264,7 +384,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // ===============================================================
-  // 3. CATÁLOGO DE HERRAMIENTAS (AGREGAR AUTOMÁTICO)
+  // 4. CATÁLOGO DE HERRAMIENTAS (AGREGAR AUTOMÁTICO)
   // ===============================================================
   const formAddTool = document.getElementById('form-quick-add-tool');
   const inputNewTool = document.getElementById('input-new-tool-name');
@@ -346,13 +466,15 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // ===============================================================
-  // 4. BOTTOM SHEET: DEVOLUCIÓN DE HERRAMIENTA
+  // 5. BOTTOM SHEET: DEVOLUCIÓN DE HERRAMIENTA (MISMA U OTRA PERSONA)
   // ===============================================================
   const sheetModal = document.getElementById('sheet-return-modal');
   const optionSame = document.getElementById('option-same-borrower');
   const optionOther = document.getElementById('option-other-borrower');
   const otherBox = document.getElementById('sheet-other-person-box');
   const inputOther = document.getElementById('input-other-name');
+  const dropdownOther = document.getElementById('dropdown-other-students-list');
+  const btnClearOther = document.getElementById('btn-clear-other-search');
   const labelSameName = document.getElementById('label-same-name');
 
   // Abrir Bottom Sheet de devolución
@@ -376,6 +498,7 @@ document.addEventListener('DOMContentLoaded', () => {
     optionOther.classList.remove('active');
     otherBox.style.display = 'none';
     inputOther.value = '';
+    dropdownOther.classList.remove('open');
 
     sheetModal.classList.add('open');
   });
@@ -386,18 +509,58 @@ document.addEventListener('DOMContentLoaded', () => {
     optionSame.classList.add('active');
     optionOther.classList.remove('active');
     otherBox.style.display = 'none';
+    dropdownOther.classList.remove('open');
   });
 
   // Elección: Otra persona
+  function renderOtherStudentDropdown(query = '') {
+    if (!dropdownOther) return;
+    const results = window.db.searchStudents(query);
+
+    dropdownOther.innerHTML = results.slice(0, 8).map(name => `
+      <div class="student-dropdown-item" data-other-pick="${name}">
+        <div class="student-dropdown-avatar">${getInitials(name)}</div>
+        <span class="student-dropdown-name">${name}</span>
+      </div>
+    `).join('');
+    dropdownOther.classList.add('open');
+  }
+
   optionOther?.addEventListener('click', () => {
     returnChoice = 'other';
     optionOther.classList.add('active');
     optionSame.classList.remove('active');
     otherBox.style.display = 'block';
     inputOther.focus();
+    renderOtherStudentDropdown('');
   });
 
-  // Cancelar
+  inputOther?.addEventListener('focus', () => {
+    renderOtherStudentDropdown(inputOther.value);
+  });
+
+  inputOther?.addEventListener('input', (e) => {
+    const val = e.target.value;
+    if (btnClearOther) btnClearOther.style.display = val ? 'block' : 'none';
+    renderOtherStudentDropdown(val);
+  });
+
+  btnClearOther?.addEventListener('click', () => {
+    inputOther.value = '';
+    btnClearOther.style.display = 'none';
+    renderOtherStudentDropdown('');
+    inputOther.focus();
+  });
+
+  dropdownOther?.addEventListener('click', (e) => {
+    const item = e.target.closest('[data-other-pick]');
+    if (!item) return;
+    const name = item.getAttribute('data-other-pick');
+    inputOther.value = name;
+    dropdownOther.classList.remove('open');
+  });
+
+  // Cancelar Devolución
   document.getElementById('btn-cancel-return-sheet')?.addEventListener('click', () => {
     sheetModal.classList.remove('open');
     loanUnderReturn = null;
@@ -411,9 +574,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (returnChoice === 'same') {
       returner = loanUnderReturn.borrower;
     } else {
-      returner = inputOther.value.trim();
+      returner = inputOther.value.trim().toUpperCase();
       if (!returner) {
-        alert('Escribe el nombre de la persona que entrega la herramienta.');
+        alert('Por favor busca o escribe el nombre de la persona que entrega la herramienta.');
         inputOther.focus();
         return;
       }
@@ -430,8 +593,18 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  // Cerrar menús desplegables al hacer clic fuera
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('#student-search-wrapper')) {
+      dropdownStudents?.classList.remove('open');
+    }
+    if (!e.target.closest('#sheet-other-person-box')) {
+      dropdownOther?.classList.remove('open');
+    }
+  });
+
   // ===============================================================
-  // 5. HISTORIAL COMPLETO Y EXCEL
+  // 6. HISTORIAL COMPLETO Y EXCEL
   // ===============================================================
   function renderHistoryLog() {
     const container = document.getElementById('container-full-history');
@@ -479,7 +652,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const next = current === 'dark' ? 'light' : 'dark';
     document.documentElement.setAttribute('data-theme', next);
 
-    // Cambiar icono SVG sutilmente
     themeToggle.innerHTML = next === 'dark' ? `
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
@@ -495,6 +667,69 @@ document.addEventListener('DOMContentLoaded', () => {
     `;
   });
 
+  // --- Service Worker & Instalación PWA ---
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js').then((reg) => {
+        console.log('[SW] Service Worker activo en:', reg.scope);
+      }).catch((err) => {
+        console.warn('[SW] No se pudo registrar:', err);
+      });
+    });
+  }
+
+  let deferredInstallPrompt = null;
+  const btnInstallApp = document.getElementById('btn-install-app');
+  const sheetInstallModal = document.getElementById('sheet-install-modal');
+  const btnCloseInstallSheet = document.getElementById('btn-close-install-sheet');
+
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredInstallPrompt = e;
+    if (btnInstallApp) {
+      btnInstallApp.classList.add('visible');
+    }
+  });
+
+  window.addEventListener('appinstalled', () => {
+    deferredInstallPrompt = null;
+    if (btnInstallApp) {
+      btnInstallApp.style.display = 'none';
+    }
+    showToast('¡App instalada con éxito en tu dispositivo!');
+  });
+
+  if (btnInstallApp) {
+    btnInstallApp.addEventListener('click', async () => {
+      if (deferredInstallPrompt) {
+        deferredInstallPrompt.prompt();
+        const choice = await deferredInstallPrompt.userChoice;
+        if (choice.outcome === 'accepted') {
+          showToast('Instalando aplicación...');
+        }
+        deferredInstallPrompt = null;
+      } else {
+        // En iOS, Safari o si ya se abrió directamente, mostrar guía
+        if (sheetInstallModal) {
+          sheetInstallModal.classList.add('open');
+        }
+      }
+    });
+  }
+
+  if (btnCloseInstallSheet) {
+    btnCloseInstallSheet.addEventListener('click', () => {
+      sheetInstallModal?.classList.remove('open');
+    });
+  }
+
+  sheetInstallModal?.addEventListener('click', (e) => {
+    if (e.target === sheetInstallModal) {
+      sheetInstallModal.classList.remove('open');
+    }
+  });
+
   // Render inicial
   switchTab('active');
 });
+

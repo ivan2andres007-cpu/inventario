@@ -164,6 +164,28 @@ body {
   gap: 8px;
 }
 
+.btn-install-header {
+  height: 34px;
+  padding: 0 10px;
+  background: var(--accent-blue-subtle);
+  border: 1px solid rgba(59, 130, 246, 0.35);
+  border-radius: var(--radius-sm);
+  color: var(--accent-blue);
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: inherit;
+  transition: all 0.15s ease;
+}
+
+.btn-install-header:hover {
+  background: var(--accent-blue);
+  color: #ffffff;
+}
+
 .btn-icon-subtle {
   width: 36px;
   height: 36px;
@@ -465,6 +487,210 @@ body {
 
 .native-input::placeholder {
   color: var(--text-tertiary);
+}
+
+/* BUSCADOR DE ALUMNOS CON AUTOCOMPLETADO TÁCTIL */
+.student-search-box {
+  position: relative;
+  width: 100%;
+  margin-bottom: 16px;
+}
+
+.search-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-input-icon {
+  position: absolute;
+  left: 14px;
+  color: var(--text-tertiary);
+  pointer-events: none;
+}
+
+.student-search-input {
+  width: 100%;
+  height: 48px;
+  padding: 0 38px 0 40px;
+  background: var(--bg-input);
+  border: 1.5px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  color: var(--text-main);
+  font-size: 15px;
+  font-family: inherit;
+  font-weight: 600;
+  outline: none;
+  transition: all 0.15s ease;
+}
+
+.student-search-input:focus {
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 3px var(--accent-blue-subtle);
+  background: var(--bg-card);
+}
+
+.btn-clear-student-search {
+  position: absolute;
+  right: 12px;
+  background: none;
+  border: none;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  padding: 4px;
+  display: none;
+}
+
+/* Menú Desplegable Flotante de Resultados */
+.student-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  width: 100%;
+  max-height: 240px;
+  overflow-y: auto;
+  background: var(--bg-card);
+  border: 1px solid var(--border-hover);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45);
+  z-index: 50;
+  display: none;
+  scrollbar-width: thin;
+}
+
+.student-dropdown-menu.open {
+  display: flex;
+  flex-direction: column;
+}
+
+.student-dropdown-item {
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-bottom: 1px solid var(--border-subtle);
+  cursor: pointer;
+  transition: background 0.12s ease;
+  user-select: none;
+}
+
+.student-dropdown-item:last-child {
+  border-bottom: none;
+}
+
+.student-dropdown-item:hover, .student-dropdown-item:active {
+  background: var(--bg-card-hover);
+}
+
+.student-dropdown-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-full);
+  background: var(--accent-blue-subtle);
+  color: var(--accent-blue);
+  font-size: 11px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.student-dropdown-name {
+  font-size: 14.5px;
+  font-weight: 700;
+  color: var(--text-main);
+  flex: 1;
+}
+
+/* Ficha del Alumno Seleccionado */
+.selected-student-banner {
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: var(--accent-blue-subtle);
+  border: 1px solid rgba(59, 130, 246, 0.35);
+  border-radius: var(--radius-sm);
+  margin-bottom: 16px;
+}
+
+.selected-student-banner.visible {
+  display: flex;
+}
+
+.selected-student-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.selected-student-name {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--text-main);
+}
+
+.btn-remove-selected-student {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: var(--radius-xs);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.btn-remove-selected-student:hover {
+  color: var(--accent-rose);
+}
+
+/* Buscador Superior en Lista de Préstamos */
+.loans-filter-bar {
+  margin-bottom: 12px;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.loans-filter-input {
+  width: 100%;
+  height: 40px;
+  padding: 0 32px 0 36px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  color: var(--text-main);
+  font-size: 13.5px;
+  font-family: inherit;
+  outline: none;
+  transition: all 0.15s ease;
+}
+
+.loans-filter-input:focus {
+  border-color: var(--border-focus);
+}
+
+.loans-filter-icon {
+  position: absolute;
+  left: 12px;
+  color: var(--text-tertiary);
+  pointer-events: none;
+}
+
+.btn-clear-loans-filter {
+  position: absolute;
+  right: 10px;
+  background: none;
+  border: none;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  padding: 4px;
+  display: none;
 }
 
 /* Contenedor de Selección Rápida de Herramientas */

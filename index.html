@@ -31,6 +31,14 @@
       </div>
 
       <div class="header-tools">
+        <button class="btn-install-header" id="btn-install-app" title="Instalar Aplicación en tu dispositivo" aria-label="Instalar App">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
+          <span>Instalar App</span>
+        </button>
         <button class="btn-icon-subtle" id="btn-theme-toggle" title="Cambiar Tema" aria-label="Cambiar Tema">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
@@ -86,6 +94,15 @@
           </button>
         </div>
 
+        <!-- Buscador Rápido de Préstamos Activos -->
+        <div class="loans-filter-bar">
+          <svg class="loans-filter-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <input type="text" class="loans-filter-input" id="input-filter-loans" placeholder="Buscar por alumno o herramienta..." autocomplete="off">
+          <button type="button" class="btn-clear-loans-filter" id="btn-clear-loans-filter">✕</button>
+        </div>
+
         <!-- Lista generada dinámicamente con personas y sus herramientas -->
         <div id="container-active-loans"></div>
       </section>
@@ -95,14 +112,41 @@
       <!-- ======================================================== -->
       <section id="section-view-loan" style="display: none;">
         <div class="panel-form">
-          <label class="field-label" for="input-borrower-name">
-            <span>Nombre de quién se la lleva</span>
-            <span style="color: var(--accent-blue);">Obligatorio</span>
+          <label class="field-label">
+            <span>1. ¿Quién se lleva la herramienta?</span>
+            <span style="color: var(--accent-blue);">Buscador de Alumnos</span>
           </label>
-          <input type="text" class="native-input" id="input-borrower-name" placeholder="Ej: Lucas Martínez" autocomplete="off">
+
+          <!-- Banner de Alumno Seleccionado -->
+          <div class="selected-student-banner" id="banner-selected-student">
+            <div class="selected-student-left">
+              <div class="avatar-badge" id="banner-student-avatar">AA</div>
+              <div>
+                <span class="selected-student-name" id="banner-student-name">ALEX ACOSTA</span>
+                <div style="font-size: 11px; color: var(--text-tertiary);">Alumno seleccionado</div>
+              </div>
+            </div>
+            <button type="button" class="btn-remove-selected-student" id="btn-remove-selected-student">
+              ✕ Cambiar
+            </button>
+          </div>
+
+          <!-- Buscador con Autocompletado de la Lista Oficial -->
+          <div class="student-search-box" id="student-search-wrapper">
+            <div class="search-input-wrap">
+              <svg class="search-input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
+              <input type="text" class="student-search-input" id="input-search-student" placeholder="Escribe para buscar (ej: Juan, Joel, Benítez)..." autocomplete="off">
+              <button type="button" class="btn-clear-student-search" id="btn-clear-student-search">✕</button>
+            </div>
+            <div class="student-dropdown-menu" id="dropdown-students-list">
+              <!-- Elementos de la lista oficial de 28 alumnos -->
+            </div>
+          </div>
 
           <label class="field-label">
-            <span>Selecciona las herramientas a prestar</span>
+            <span>2. Selecciona las herramientas que se lleva</span>
             <span id="selected-tags-badge" style="color: var(--text-tertiary);">0 seleccionadas</span>
           </label>
 
@@ -231,18 +275,63 @@
         </div>
       </div>
 
-      <!-- Campo de texto si elige otra persona -->
+      <!-- Campo de texto y buscador si elige otra persona -->
       <div id="sheet-other-person-box">
-        <label class="field-label" for="input-other-name">
+        <label class="field-label">
           <span>Nombre de la persona que entrega</span>
+          <span style="color: var(--accent-emerald);">Buscar alumno</span>
         </label>
-        <input type="text" class="native-input" id="input-other-name" placeholder="Escribe el nombre y apellido..." autocomplete="off">
+        <div class="student-search-box" style="margin-bottom: 8px;">
+          <div class="search-input-wrap">
+            <svg class="search-input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <input type="text" class="student-search-input" id="input-other-name" placeholder="Buscar alumno (ej: Juan, Joel, Benítez)..." autocomplete="off">
+            <button type="button" class="btn-clear-student-search" id="btn-clear-other-search">✕</button>
+          </div>
+          <div class="student-dropdown-menu" id="dropdown-other-students-list"></div>
+        </div>
       </div>
 
       <div class="sheet-actions">
         <button type="button" class="btn-sheet-cancel" id="btn-cancel-return-sheet">Cancelar</button>
         <button type="button" class="btn-sheet-submit" id="btn-submit-return-sheet">
           Confirmar Devolución
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- BOTTOM SHEET MODAL: INSTRUCCIONES DE INSTALACIÓN            -->
+  <!-- ============================================================ -->
+  <div class="sheet-backdrop" id="sheet-install-modal">
+    <div class="sheet-card">
+      <div class="sheet-drag-handle"></div>
+
+      <h3 class="sheet-header-title">📲 Instalar en tu Pantalla Principal</h3>
+      <p class="sheet-header-desc">
+        Esta app funciona 100% de manera local y sin necesidad de internet.
+      </p>
+
+      <div style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 14px; margin-bottom: 14px; font-size: 13.5px; display: flex; flex-direction: column; gap: 10px;">
+        <div>
+          <strong style="color: var(--accent-blue); display: block; margin-bottom: 2px;">🤖 En Android (Chrome):</strong>
+          <span>Toca los <strong>tres puntos (⋮)</strong> arriba a la derecha y selecciona <strong>"Instalar aplicación"</strong> o "Agregar a la pantalla principal".</span>
+        </div>
+        <div style="border-top: 1px solid var(--border-subtle); padding-top: 8px;">
+          <strong style="color: var(--accent-emerald); display: block; margin-bottom: 2px;">🍏 En iPhone / iPad (Safari):</strong>
+          <span>Toca el botón <strong>Compartir</strong> (icono de cuadrado con flecha hacia arriba) y elige <strong>"Agregar al inicio"</strong>.</span>
+        </div>
+        <div style="border-top: 1px solid var(--border-subtle); padding-top: 8px;">
+          <strong style="color: var(--accent-amber); display: block; margin-bottom: 2px;">💻 En PC (Windows / Mac):</strong>
+          <span>Toca el icono de <strong>Instalar</strong> que aparece a la derecha en la barra de direcciones de tu navegador.</span>
+        </div>
+      </div>
+
+      <div class="sheet-actions">
+        <button type="button" class="btn-sheet-submit" id="btn-close-install-sheet" style="background: var(--accent-blue);">
+          Entendido
         </button>
       </div>
     </div>

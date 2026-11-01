@@ -1,12 +1,45 @@
 /**
  * db.js - Almacenamiento Simple para el Colegio
- * Guarda herramientas, préstamos y devoluciones en localStorage de forma automática.
+ * Guarda herramientas, lista oficial de alumnos, préstamos y devoluciones en localStorage.
  */
 
 const STORAGE_TOOLS = 'colegio_herramientas';
 const STORAGE_LOANS = 'colegio_prestamos';
+const STORAGE_STUDENTS = 'colegio_alumnos';
 
-// Herramientas iniciales de ejemplo comunes de colegio/taller
+// Lista Oficial de Alumnos / Personal del Colegio proporcionada
+const OFFICIAL_STUDENTS = [
+  "ALEX ACOSTA",
+  "JOEL BAEL",
+  "ISAIAS BENITEZ",
+  "JUAN CABRERA",
+  "SANTINO CARDOZO",
+  "ANGEL ROLON",
+  "RODNEY COLMAN",
+  "FACUNDO ENCINA",
+  "BENJAMIN GARRIDO",
+  "LUCAS GONZALEZ",
+  "FRANCO MASI",
+  "JENNIFER MAZO",
+  "GERARDO MENDIETA",
+  "MARIA MENDOZA",
+  "EVER MENDOZA",
+  "YERUTI MORINIGO",
+  "MATEO ORIHUELA",
+  "ESTEBAN ORREGO",
+  "VICTORIA ORUE",
+  "ENZO PACUÁ",
+  "ISAIAS PEREZ",
+  "JUAN ROJAS",
+  "MARINA ROSELLON",
+  "GUSTAVO RUIZ",
+  "KAREN RUIZ",
+  "JOSHIAS SERVIN",
+  "JORGE TORRES",
+  "MATIAS VEGA"
+];
+
+// Herramientas iniciales de taller escolar
 const DEFAULT_TOOLS = [
   'Martillo',
   'Destornillador Phillips',
@@ -20,12 +53,12 @@ const DEFAULT_TOOLS = [
   'Pistola de Silicona'
 ];
 
-// Préstamos iniciales de ejemplo
+// Préstamos iniciales con alumnos de la lista oficial
 const DEFAULT_LOANS = [
   {
     id: 1,
     toolName: 'Martillo',
-    borrower: 'Lucas Martínez',
+    borrower: 'ISAIAS BENITEZ',
     loanDate: '01/11/2026, 09:15',
     returned: false,
     returner: null,
@@ -34,7 +67,7 @@ const DEFAULT_LOANS = [
   {
     id: 2,
     toolName: 'Tester / Multímetro',
-    borrower: 'Lucas Martínez',
+    borrower: 'ISAIAS BENITEZ',
     loanDate: '01/11/2026, 09:16',
     returned: false,
     returner: null,
@@ -42,12 +75,21 @@ const DEFAULT_LOANS = [
   },
   {
     id: 3,
+    toolName: 'Soldador de Estaño (Cautín)',
+    borrower: 'SANTINO CARDOZO',
+    loanDate: '01/11/2026, 09:30',
+    returned: false,
+    returner: null,
+    returnDate: null
+  },
+  {
+    id: 4,
     toolName: 'Destornillador Phillips',
-    borrower: 'Sofía Romero',
-    loanDate: '01/11/2026, 10:05',
+    borrower: 'MARIA MENDOZA',
+    loanDate: '01/11/2026, 08:30',
     returned: true,
-    returner: 'Sofía Romero',
-    returnDate: '01/11/2026, 11:30'
+    returner: 'MARIA MENDOZA',
+    returnDate: '01/11/2026, 10:15'
   }
 ];
 
@@ -57,12 +99,55 @@ class SimpleDB {
   }
 
   init() {
+    // Asegurar herramientas
     if (!localStorage.getItem(STORAGE_TOOLS)) {
       localStorage.setItem(STORAGE_TOOLS, JSON.stringify(DEFAULT_TOOLS));
     }
+    // Asegurar lista oficial de alumnos
+    const existingStudents = this.getStudents();
+    const merged = Array.from(new Set([...OFFICIAL_STUDENTS, ...existingStudents]));
+    localStorage.setItem(STORAGE_STUDENTS, JSON.stringify(merged));
+
+    // Asegurar préstamos iniciales
     if (!localStorage.getItem(STORAGE_LOANS)) {
       localStorage.setItem(STORAGE_LOANS, JSON.stringify(DEFAULT_LOANS));
     }
+  }
+
+  // --- Alumnos / Personal ---
+  getStudents() {
+    try {
+      const stored = JSON.parse(localStorage.getItem(STORAGE_STUDENTS));
+      if (Array.isArray(stored) && stored.length > 0) {
+        return stored;
+      }
+      return OFFICIAL_STUDENTS;
+    } catch (e) {
+      return OFFICIAL_STUDENTS;
+    }
+  }
+
+  searchStudents(query) {
+    const list = this.getStudents();
+    if (!query || !query.trim()) return list;
+
+    // Normalizar texto quitando acentos para una búsqueda rápida e infalible
+    const cleanStr = (s) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+    const q = cleanStr(query);
+
+    return list.filter(name => cleanStr(name).includes(q));
+  }
+
+  addStudent(name) {
+    const trimmed = name.trim().toUpperCase();
+    if (!trimmed) return false;
+    const students = this.getStudents();
+    if (!students.some(s => s.toUpperCase() === trimmed)) {
+      students.push(trimmed);
+      students.sort((a, b) => a.localeCompare(b));
+      localStorage.setItem(STORAGE_STUDENTS, JSON.stringify(students));
+    }
+    return true;
   }
 
   // --- Herramientas ---
@@ -78,7 +163,6 @@ class SimpleDB {
     const trimmed = name.trim();
     if (!trimmed) return false;
     const tools = this.getTools();
-    // Evitar duplicados exactos
     if (tools.some(t => t.toLowerCase() === trimmed.toLowerCase())) {
       throw new Error(`La herramienta "${trimmed}" ya está en la lista.`);
     }
@@ -109,11 +193,13 @@ class SimpleDB {
     return this.getLoans().filter(l => l.returned);
   }
 
-  // Registra que una persona se llevó una o más herramientas
   registerLoan(borrowerName, toolNames) {
-    const borrower = borrowerName.trim();
-    if (!borrower) throw new Error('Debes escribir el nombre de la persona que se lleva la herramienta.');
+    const borrower = borrowerName.trim().toUpperCase();
+    if (!borrower) throw new Error('Debes seleccionar o escribir el nombre de la persona que se lleva la herramienta.');
     if (!toolNames || toolNames.length === 0) throw new Error('Debes seleccionar o escribir al menos una herramienta.');
+
+    // Guardar al alumno si es nuevo
+    this.addStudent(borrower);
 
     const loans = this.getLoans();
     const active = this.getActiveLoans();
@@ -126,13 +212,12 @@ class SimpleDB {
 
     toolNames.forEach(tName => {
       const name = tName.trim();
-      // Verificar si ya está prestada
       const alreadyTaken = active.find(l => l.toolName.toLowerCase() === name.toLowerCase());
       if (alreadyTaken) {
         throw new Error(`La herramienta "${name}" ya se la llevó ${alreadyTaken.borrower} y aún no la devolvió.`);
       }
 
-      // Si la herramienta no estaba en la lista de herramientas, guardarla automáticamente
+      // Si la herramienta no estaba en el inventario, se guarda automáticamente
       const allTools = this.getTools();
       if (!allTools.some(t => t.toLowerCase() === name.toLowerCase())) {
         allTools.push(name);
@@ -157,10 +242,12 @@ class SimpleDB {
     return newEntries;
   }
 
-  // Registra la devolución de una herramienta
   registerReturn(loanId, returnerName) {
-    const returner = returnerName ? returnerName.trim() : '';
+    const returner = returnerName ? returnerName.trim().toUpperCase() : '';
     if (!returner) throw new Error('Debes indicar quién devuelve la herramienta.');
+
+    // Guardar alumno si es nuevo
+    this.addStudent(returner);
 
     const loans = this.getLoans();
     const loan = loans.find(l => l.id === loanId);
@@ -180,22 +267,15 @@ class SimpleDB {
     return loan;
   }
 
-  // Comprueba si una herramienta está disponible o prestada
   isToolAvailable(toolName) {
     const active = this.getActiveLoans();
     return !active.some(l => l.toolName.toLowerCase() === toolName.toLowerCase());
   }
 
-  // Quién tiene la herramienta actualmente
   getToolHolder(toolName) {
     const active = this.getActiveLoans();
     const loan = active.find(l => l.toolName.toLowerCase() === toolName.toLowerCase());
     return loan ? loan.borrower : null;
-  }
-
-  resetData() {
-    localStorage.setItem(STORAGE_TOOLS, JSON.stringify(DEFAULT_TOOLS));
-    localStorage.setItem(STORAGE_LOANS, JSON.stringify(DEFAULT_LOANS));
   }
 }
 
