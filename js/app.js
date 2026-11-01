@@ -67,11 +67,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (tabKey === 'active') renderActiveLoans();
     if (tabKey === 'loan') {
+      populateStudentDatalist();
       renderLoanAvailableTags();
-      // Si no hay alumno seleccionado, enfocar el buscador
       if (!selectedBorrowerName) {
-        const inputSearch = document.getElementById('input-search-student');
-        if (inputSearch) renderStudentDropdown('');
+        renderStudentDropdown(inputSearchStudent ? inputSearchStudent.value : '');
       }
     }
     if (tabKey === 'tools') renderToolsCatalog();
@@ -121,12 +120,12 @@ document.addEventListener('DOMContentLoaded', () => {
     let activeLoans = window.db.getActiveLoans();
     updateCounterBadge();
 
-    // Filtro en vivo si el usuario busca por nombre o herramienta
+    // Filtro en vivo si el usuario busca por nombre o herramienta (sin importar acentos)
     if (activeLoansFilterQuery) {
-      const q = activeLoansFilterQuery;
+      const q = window.db.cleanStr(activeLoansFilterQuery);
       activeLoans = activeLoans.filter(l => 
-        l.borrower.toLowerCase().includes(q) || 
-        l.toolName.toLowerCase().includes(q)
+        window.db.cleanStr(l.borrower).includes(q) || 
+        window.db.cleanStr(l.toolName).includes(q)
       );
     }
 
@@ -213,54 +212,120 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnClearSearch = document.getElementById('btn-clear-student-search');
   const studentSearchWrapper = document.getElementById('student-search-wrapper');
 
+  // Llenar el datalist nativo para compatibilidad con teclados virtuales de Android
+  function populateStudentDatalist() {
+    const datalist = document.getElementById('datalist-official-students');
+    if (!datalist) return;
+    const students = window.db.getStudents();
+    datalist.innerHTML = students.map(s => `<option value="${s}"></option>`).join('');
+  }
+
   function renderStudentDropdown(query = '') {
     if (!dropdownStudents) return;
-    const results = window.db.searchStudents(query);
+    const cleanQ = (query || '').trim();
+    const results = window.db.searchStudents(cleanQ);
+    const totalStudents = window.db.getStudents().length;
 
-    if (results.length === 0) {
-      dropdownStudents.innerHTML = `
-        <div style="padding: 12px 14px; font-size: 13px; color: var(--text-tertiary); text-align: center;">
-          No encontrado en la lista. Puedes escribir su nombre libremente.
+    let html = '';
+
+    // Encabezado con conteo
+    if (!cleanQ) {
+      html += `
+        <div class="student-dropdown-count">
+          <span>${totalStudents} Alumnos Oficiales</span>
+          <span>Toca uno para elegir</span>
         </div>
       `;
     } else {
-      dropdownStudents.innerHTML = results.map(name => `
+      html += `
+        <div class="student-dropdown-count">
+          <span>Coincidencias: ${results.length}</span>
+          <span>Toca para elegir</span>
+        </div>
+      `;
+    }
+
+    if (results.length === 0) {
+      html += `
+        <div style="padding: 12px 14px; font-size: 13px; color: var(--text-tertiary); text-align: center;">
+          No se encontró "${cleanQ}" en la lista.
+        </div>
+        <div class="student-dropdown-item student-dropdown-custom" data-student-pick="${cleanQ.toUpperCase()}">
+          <div class="student-dropdown-avatar">➕</div>
+          <span class="student-dropdown-name">Usar "${cleanQ.toUpperCase()}" (Nuevo)</span>
+        </div>
+      `;
+    } else {
+      html += results.map(name => `
         <div class="student-dropdown-item" data-student-pick="${name}">
           <div class="student-dropdown-avatar">${getInitials(name)}</div>
           <span class="student-dropdown-name">${name}</span>
         </div>
       `).join('');
+
+      // Opción para registrar nombre nuevo si lo escrito no coincide exactamente
+      const exactMatch = results.some(r => window.db.cleanStr(r) === window.db.cleanStr(cleanQ));
+      if (cleanQ && !exactMatch && cleanQ.length >= 2) {
+        html += `
+          <div class="student-dropdown-item student-dropdown-custom" data-student-pick="${cleanQ.toUpperCase()}">
+            <div class="student-dropdown-avatar">➕</div>
+            <span class="student-dropdown-name">Usar "${cleanQ.toUpperCase()}" (Nuevo)</span>
+          </div>
+        `;
+      }
     }
-    dropdownStudents.classList.add('open');
+
+    dropdownStudents.innerHTML = html;
   }
 
   function selectBorrower(name) {
-    selectedBorrowerName = name;
-    bannerStudentName.textContent = name;
-    bannerStudentAvatar.textContent = getInitials(name);
+    if (!name || !name.trim()) return;
+    selectedBorrowerName = name.trim().toUpperCase();
+    bannerStudentName.textContent = selectedBorrowerName;
+    bannerStudentAvatar.textContent = getInitials(selectedBorrowerName);
     bannerSelected.classList.add('visible');
     studentSearchWrapper.style.display = 'none';
-    dropdownStudents.classList.remove('open');
   }
 
   function unselectBorrower() {
     selectedBorrowerName = null;
     bannerSelected.classList.remove('visible');
     studentSearchWrapper.style.display = 'block';
-    inputSearchStudent.value = '';
-    btnClearSearch.style.display = 'none';
-    inputSearchStudent.focus();
+    if (inputSearchStudent) {
+      inputSearchStudent.value = '';
+      btnClearSearch.style.display = 'none';
+    }
     renderStudentDropdown('');
   }
 
-  inputSearchStudent?.addEventListener('focus', () => {
-    renderStudentDropdown(inputSearchStudent.value);
-  });
+  // Toque seguro para celulares de gama baja (pointerdown + click sin retraso)
+  function handleStudentSelection(e) {
+    const item = e.target.closest('[data-student-pick]');
+    if (!item) return;
+    e.preventDefault();
+    const name = item.getAttribute('data-student-pick');
+    selectBorrower(name);
+  }
+
+  dropdownStudents?.addEventListener('pointerdown', handleStudentSelection);
+  dropdownStudents?.addEventListener('click', handleStudentSelection);
 
   inputSearchStudent?.addEventListener('input', (e) => {
     const val = e.target.value;
     btnClearSearch.style.display = val ? 'block' : 'none';
+
+    // Si seleccionó o escribió exactamente un nombre completo de la lista
+    const exact = window.db.getStudents().find(s => s.toUpperCase() === val.trim().toUpperCase());
+    if (exact) {
+      selectBorrower(exact);
+      return;
+    }
+
     renderStudentDropdown(val);
+  });
+
+  inputSearchStudent?.addEventListener('focus', () => {
+    renderStudentDropdown(inputSearchStudent.value);
   });
 
   btnClearSearch?.addEventListener('click', () => {
@@ -268,13 +333,6 @@ document.addEventListener('DOMContentLoaded', () => {
     btnClearSearch.style.display = 'none';
     renderStudentDropdown('');
     inputSearchStudent.focus();
-  });
-
-  dropdownStudents?.addEventListener('click', (e) => {
-    const item = e.target.closest('[data-student-pick]');
-    if (!item) return;
-    const name = item.getAttribute('data-student-pick');
-    selectBorrower(name);
   });
 
   btnRemoveSelected?.addEventListener('click', () => {
@@ -515,23 +573,58 @@ document.addEventListener('DOMContentLoaded', () => {
   // Elección: Otra persona
   function renderOtherStudentDropdown(query = '') {
     if (!dropdownOther) return;
-    const results = window.db.searchStudents(query);
+    const cleanQ = (query || '').trim();
+    const results = window.db.searchStudents(cleanQ);
 
-    dropdownOther.innerHTML = results.slice(0, 8).map(name => `
-      <div class="student-dropdown-item" data-other-pick="${name}">
-        <div class="student-dropdown-avatar">${getInitials(name)}</div>
-        <span class="student-dropdown-name">${name}</span>
-      </div>
-    `).join('');
-    dropdownOther.classList.add('open');
+    let html = '';
+    if (results.length === 0) {
+      html += `
+        <div style="padding: 10px 14px; font-size: 13px; color: var(--text-tertiary); text-align: center;">
+          No se encontró "${cleanQ}" en la lista.
+        </div>
+        <div class="student-dropdown-item student-dropdown-custom" data-other-pick="${cleanQ.toUpperCase()}">
+          <div class="student-dropdown-avatar">➕</div>
+          <span class="student-dropdown-name">Usar "${cleanQ.toUpperCase()}" (Nuevo)</span>
+        </div>
+      `;
+    } else {
+      html += results.map(name => `
+        <div class="student-dropdown-item" data-other-pick="${name}">
+          <div class="student-dropdown-avatar">${getInitials(name)}</div>
+          <span class="student-dropdown-name">${name}</span>
+        </div>
+      `).join('');
+
+      const exactMatch = results.some(r => window.db.cleanStr(r) === window.db.cleanStr(cleanQ));
+      if (cleanQ && !exactMatch && cleanQ.length >= 2) {
+        html += `
+          <div class="student-dropdown-item student-dropdown-custom" data-other-pick="${cleanQ.toUpperCase()}">
+            <div class="student-dropdown-avatar">➕</div>
+            <span class="student-dropdown-name">Usar "${cleanQ.toUpperCase()}" (Nuevo)</span>
+          </div>
+        `;
+      }
+    }
+
+    dropdownOther.innerHTML = html;
   }
+
+  function handleOtherStudentSelection(e) {
+    const item = e.target.closest('[data-other-pick]');
+    if (!item) return;
+    e.preventDefault();
+    const name = item.getAttribute('data-other-pick');
+    inputOther.value = name;
+  }
+
+  dropdownOther?.addEventListener('pointerdown', handleOtherStudentSelection);
+  dropdownOther?.addEventListener('click', handleOtherStudentSelection);
 
   optionOther?.addEventListener('click', () => {
     returnChoice = 'other';
     optionOther.classList.add('active');
     optionSame.classList.remove('active');
     otherBox.style.display = 'block';
-    inputOther.focus();
     renderOtherStudentDropdown('');
   });
 
@@ -550,14 +643,6 @@ document.addEventListener('DOMContentLoaded', () => {
     btnClearOther.style.display = 'none';
     renderOtherStudentDropdown('');
     inputOther.focus();
-  });
-
-  dropdownOther?.addEventListener('click', (e) => {
-    const item = e.target.closest('[data-other-pick]');
-    if (!item) return;
-    const name = item.getAttribute('data-other-pick');
-    inputOther.value = name;
-    dropdownOther.classList.remove('open');
   });
 
   // Cancelar Devolución
@@ -728,6 +813,9 @@ document.addEventListener('DOMContentLoaded', () => {
       sheetInstallModal.classList.remove('open');
     }
   });
+
+  // Inicialización de la lista de alumnos
+  populateStudentDatalist();
 
   // Render inicial
   switchTab('active');

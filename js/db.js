@@ -103,15 +103,45 @@ class SimpleDB {
     if (!localStorage.getItem(STORAGE_TOOLS)) {
       localStorage.setItem(STORAGE_TOOLS, JSON.stringify(DEFAULT_TOOLS));
     }
-    // Asegurar lista oficial de alumnos
-    const existingStudents = this.getStudents();
-    const merged = Array.from(new Set([...OFFICIAL_STUDENTS, ...existingStudents]));
+
+    // Asegurar lista oficial de alumnos (siempre combinada y ordenada alfabéticamente)
+    let existingStudents = [];
+    try {
+      const stored = JSON.parse(localStorage.getItem(STORAGE_STUDENTS));
+      if (Array.isArray(stored)) {
+        existingStudents = stored;
+      }
+    } catch (e) {
+      existingStudents = [];
+    }
+
+    const merged = Array.from(new Set([...OFFICIAL_STUDENTS, ...existingStudents.filter(Boolean)]));
+    merged.sort((a, b) => a.localeCompare(b, 'es', { sensitivity: 'base' }));
     localStorage.setItem(STORAGE_STUDENTS, JSON.stringify(merged));
 
     // Asegurar préstamos iniciales
     if (!localStorage.getItem(STORAGE_LOANS)) {
       localStorage.setItem(STORAGE_LOANS, JSON.stringify(DEFAULT_LOANS));
     }
+  }
+
+  // --- Normalizador de Texto Infalible (Compatible con Android Go / Samsung A03 Core) ---
+  cleanStr(s) {
+    if (!s) return '';
+    let res = String(s).toLowerCase();
+    try {
+      res = res.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    } catch (e) {
+      // Fallback si la biblioteca ICU de Android Go no tiene normalize completo
+    }
+    return res
+      .replace(/[áàäâ]/g, 'a')
+      .replace(/[éèëê]/g, 'e')
+      .replace(/[íìïî]/g, 'i')
+      .replace(/[óòöô]/g, 'o')
+      .replace(/[úùüû]/g, 'u')
+      .replace(/[ñ]/g, 'n')
+      .trim();
   }
 
   // --- Alumnos / Personal ---
@@ -131,11 +161,14 @@ class SimpleDB {
     const list = this.getStudents();
     if (!query || !query.trim()) return list;
 
-    // Normalizar texto quitando acentos para una búsqueda rápida e infalible
-    const cleanStr = (s) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
-    const q = cleanStr(query);
+    const qClean = this.cleanStr(query);
+    const words = qClean.split(/\s+/).filter(Boolean);
+    if (words.length === 0) return list;
 
-    return list.filter(name => cleanStr(name).includes(q));
+    return list.filter(name => {
+      const nameClean = this.cleanStr(name);
+      return words.every(w => nameClean.includes(w));
+    });
   }
 
   addStudent(name) {
@@ -144,7 +177,7 @@ class SimpleDB {
     const students = this.getStudents();
     if (!students.some(s => s.toUpperCase() === trimmed)) {
       students.push(trimmed);
-      students.sort((a, b) => a.localeCompare(b));
+      students.sort((a, b) => a.localeCompare(b, 'es', { sensitivity: 'base' }));
       localStorage.setItem(STORAGE_STUDENTS, JSON.stringify(students));
     }
     return true;

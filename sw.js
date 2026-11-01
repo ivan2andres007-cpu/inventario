@@ -2,14 +2,14 @@
  * sw.js - Service Worker para Funcionamiento 100% Offline e Instalación PWA
  */
 
-const CACHE_NAME = 'control-herramientas-v1';
+const CACHE_NAME = 'control-herramientas-v2';
 const STATIC_ASSETS = [
   './',
   './index.html',
-  './css/styles.css',
-  './js/db.js',
-  './js/excel.js',
-  './js/app.js',
+  './css/styles.css?v=2',
+  './js/db.js?v=2',
+  './js/excel.js?v=2',
+  './js/app.js?v=2',
   './lib/xlsx.full.min.js',
   './manifest.json',
   './assets/icon-192.png',
@@ -27,7 +27,7 @@ self.addEventListener('install', (event) => {
   );
 });
 
-// Activación: Limpieza de cachés antiguas si hubiera actualización
+// Activación: Limpieza inmediata de cachés antiguas
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) => {
@@ -42,18 +42,13 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Estrategia de Red: Cache First con Network Fallback (100% Offline)
+// Estrategia de Red: Network First con Cache Fallback (Actualizaciones al instante y 100% Offline)
 self.addEventListener('fetch', (event) => {
-  // Ignorar peticiones que no sean GET o esquemas extraños
   if (event.request.method !== 'GET') return;
 
   event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      if (cachedResponse) {
-        return cachedResponse;
-      }
-      return fetch(event.request).then((networkResponse) => {
-        // Guardar copia en caché si es una respuesta válida
+    fetch(event.request)
+      .then((networkResponse) => {
         if (networkResponse && networkResponse.status === 200) {
           const responseToCache = networkResponse.clone();
           caches.open(CACHE_NAME).then((cache) => {
@@ -61,12 +56,16 @@ self.addEventListener('fetch', (event) => {
           });
         }
         return networkResponse;
-      }).catch(() => {
-        // Si no hay internet y busca la página principal, devolver index.html de la caché
-        if (event.request.mode === 'navigate') {
-          return caches.match('./index.html');
-        }
-      });
-    })
+      })
+      .catch(() => {
+        return caches.match(event.request).then((cachedResponse) => {
+          if (cachedResponse) {
+            return cachedResponse;
+          }
+          if (event.request.mode === 'navigate') {
+            return caches.match('./index.html');
+          }
+        });
+      })
   );
 });

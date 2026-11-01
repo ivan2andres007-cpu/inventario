@@ -10,7 +10,7 @@
 
   <link rel="manifest" href="manifest.json">
   <link rel="icon" type="image/svg+xml" href="assets/icon-192.svg">
-  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/styles.css?v=2">
 </head>
 <body>
 
@@ -131,15 +131,18 @@
             </button>
           </div>
 
-          <!-- Buscador con Autocompletado de la Lista Oficial -->
+          <!-- Buscador con Selección Rápida de Alumnos -->
           <div class="student-search-box" id="student-search-wrapper">
             <div class="search-input-wrap">
               <svg class="search-input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line>
               </svg>
-              <input type="text" class="student-search-input" id="input-search-student" placeholder="Escribe para buscar (ej: Juan, Joel, Benítez)..." autocomplete="off">
+              <input type="text" class="student-search-input" id="input-search-student" list="datalist-official-students" placeholder="Escribe para filtrar (ej: Juan, Joel, Benítez)..." autocomplete="off" autocapitalize="characters">
               <button type="button" class="btn-clear-student-search" id="btn-clear-student-search">✕</button>
             </div>
+            <!-- Datalist nativo para teclados de celular Android / Samsung -->
+            <datalist id="datalist-official-students"></datalist>
+
             <div class="student-dropdown-menu" id="dropdown-students-list">
               <!-- Elementos de la lista oficial de 28 alumnos -->
             </div>
@@ -286,7 +289,7 @@
             <svg class="search-input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line>
             </svg>
-            <input type="text" class="student-search-input" id="input-other-name" placeholder="Buscar alumno (ej: Juan, Joel, Benítez)..." autocomplete="off">
+            <input type="text" class="student-search-input" id="input-other-name" list="datalist-official-students" placeholder="Buscar alumno (ej: Juan, Joel, Benítez)..." autocomplete="off" autocapitalize="characters">
             <button type="button" class="btn-clear-student-search" id="btn-clear-other-search">✕</button>
           </div>
           <div class="student-dropdown-menu" id="dropdown-other-students-list"></div>
@@ -348,9 +351,9 @@
   <!-- Librería SheetJS (Offline local) -->
   <script src="lib/xlsx.full.min.js"></script>
 
-  <!-- Scripts de la Aplicación -->
-  <script src="js/db.js"></script>
-  <script src="js/excel.js"></script>
-  <script src="js/app.js"></script>
+  <!-- Scripts de la Aplicación con Cache Buster -->
+  <script src="js/db.js?v=2"></script>
+  <script src="js/excel.js?v=2"></script>
+  <script src="js/app.js?v=2"></script>
 </body>
 </html>
