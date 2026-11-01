@@ -1,0 +1,20 @@
+{
+  "name": "control-herramientas-mobile",
+  "version": "1.0.0",
+  "description": "Sistema de gestión y control de pañol de herramientas adaptado a celulares con exportación a Excel",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": [
+    "herramientas",
+    "inventario",
+    "control-prestamos",
+    "excel",
+    "pwa",
+    "mobile-first"
+  ],
+  "author": "Antigravity",
+  "license": "MIT"
+}

@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#090a0f">
+  <title>Control de Pañol y Herramientas</title>
+
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/svg+xml" href="assets/icon-192.svg">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <div class="app-shell">
+
+    <!-- HEADER SUPERIOR -->
+    <header class="top-header">
+      <div class="brand-block">
+        <div class="brand-symbol">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <h1>Control de Pañol</h1>
+          <p>Taller & Herramientas</p>
+        </div>
+      </div>
+
+      <div class="header-tools">
+        <button class="btn-icon-subtle" id="btn-theme-toggle" title="Cambiar Tema" aria-label="Cambiar Tema">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- CONTROL SEGMENTADO (TABS SUPERIORES) -->
+    <nav class="segmented-nav">
+      <div class="nav-track">
+        <button class="nav-pill active" data-tab="active">
+          <span>En préstamo</span>
+          <span class="pill-counter" id="tab-counter-active">0</span>
+        </button>
+        <button class="nav-pill" data-tab="loan">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+          <span>Prestar</span>
+        </button>
+        <button class="nav-pill" data-tab="tools">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+          </svg>
+          <span>Catálogo</span>
+        </button>
+        <button class="nav-pill" data-tab="history">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line>
+          </svg>
+          <span>Excel</span>
+        </button>
+      </div>
+    </nav>
+
+    <!-- ÁREA PRINCIPAL -->
+    <main class="content-area">
+
+      <!-- ======================================================== -->
+      <!-- PESTAÑA 1: HERRAMIENTAS PRESTADAS (AGRUPADAS POR ALUMNO)  -->
+      <!-- ======================================================== -->
+      <section id="section-view-active">
+        <div class="status-bar">
+          <div class="status-label">
+            <span class="status-dot"></span>
+            <span>Herramientas actualmente fuera de pañol</span>
+          </div>
+          <button id="btn-header-export-quick" class="btn-icon-subtle" title="Descargar Excel Rápido" aria-label="Descargar Excel" style="width: 32px; height: 32px;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+          </button>
+        </div>
+
+        <!-- Lista generada dinámicamente con personas y sus herramientas -->
+        <div id="container-active-loans"></div>
+      </section>
+
+      <!-- ======================================================== -->
+      <!-- PESTAÑA 2: FORMULARIO DE PRÉSTAMO RÁPIDO                 -->
+      <!-- ======================================================== -->
+      <section id="section-view-loan" style="display: none;">
+        <div class="panel-form">
+          <label class="field-label" for="input-borrower-name">
+            <span>Nombre de quién se la lleva</span>
+            <span style="color: var(--accent-blue);">Obligatorio</span>
+          </label>
+          <input type="text" class="native-input" id="input-borrower-name" placeholder="Ej: Lucas Martínez" autocomplete="off">
+
+          <label class="field-label">
+            <span>Selecciona las herramientas a prestar</span>
+            <span id="selected-tags-badge" style="color: var(--text-tertiary);">0 seleccionadas</span>
+          </label>
+
+          <div class="tags-grid" id="grid-available-tools">
+            <!-- Chips de herramientas disponibles -->
+          </div>
+
+          <label class="field-label" for="input-custom-tool" style="margin-top: 4px;">
+            <span>O escribe otra herramienta</span>
+            <span style="color: var(--accent-emerald);">Se guarda sola</span>
+          </label>
+          <input type="text" class="native-input" id="input-custom-tool" placeholder="Ej: Sierra de mano...">
+
+          <button class="btn-solid-primary" id="btn-confirm-loan">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+            <span>Registrar Préstamo</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- ======================================================== -->
+      <!-- PESTAÑA 3: CATÁLOGO DE HERRAMIENTAS                      -->
+      <!-- ======================================================== -->
+      <section id="section-view-tools" style="display: none;">
+        <div class="panel-form" style="margin-bottom: 14px;">
+          <label class="field-label" for="input-new-tool-name">
+            <span>Agregar nueva herramienta al pañol</span>
+          </label>
+          <form id="form-quick-add-tool" class="add-bar-layout">
+            <input type="text" class="native-input" id="input-new-tool-name" placeholder="Nombre de herramienta..." autocomplete="off">
+            <button type="submit" class="btn-solid-sm">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line>
+              </svg>
+              <span>Agregar</span>
+            </button>
+          </form>
+        </div>
+
+        <div class="status-bar">
+          <div class="status-label">
+            <span>Herramientas en inventario</span>
+            <span id="label-tools-count" style="color: var(--text-tertiary); font-weight: 500;">(0)</span>
+          </div>
+        </div>
+
+        <div class="tool-items-stack" id="container-tools-catalog"></div>
+      </section>
+
+      <!-- ======================================================== -->
+      <!-- PESTAÑA 4: HISTORIAL Y EXPORTACIÓN EXCEL                 -->
+      <!-- ======================================================== -->
+      <section id="section-view-history" style="display: none;">
+        <div class="excel-download-card">
+          <div style="width: 44px; height: 44px; border-radius: 12px; background: rgba(5, 150, 105, 0.12); color: var(--excel-green); display: flex; align-items: center; justify-content: center; margin: 0 auto;">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="16" y1="13" x2="8" y2="13"></line>
+              <line x1="16" y1="17" x2="8" y2="17"></line>
+            </svg>
+          </div>
+          <h2 class="excel-meta-title">Planilla de Control</h2>
+          <p class="excel-meta-desc">
+            Descarga el archivo Excel oficial con el detalle de quién llevó y quién devolvió cada herramienta.
+          </p>
+
+          <button class="btn-excel-primary" id="btn-download-excel-file">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            <span>Descargar Planilla Excel (.xlsx)</span>
+          </button>
+        </div>
+
+        <div class="status-bar">
+          <div class="status-label">
+            <span>Historial completo de movimientos</span>
+          </div>
+        </div>
+
+        <div id="container-full-history"></div>
+      </section>
+
+    </main>
+
+  </div><!-- Fin app-shell -->
+
+  <!-- ============================================================ -->
+  <!-- BOTTOM SHEET MODAL: DEVOLUCIÓN DE HERRAMIENTA                -->
+  <!-- ============================================================ -->
+  <div class="sheet-backdrop" id="sheet-return-modal">
+    <div class="sheet-card">
+      <div class="sheet-drag-handle"></div>
+
+      <h3 class="sheet-header-title" id="sheet-tool-title">Devolver herramienta</h3>
+      <p class="sheet-header-desc" id="sheet-borrower-desc">
+        Se la llevó: Lucas Martínez
+      </p>
+
+      <div class="field-label" style="margin-bottom: 6px;">
+        <span>¿Quién devuelve la herramienta?</span>
+      </div>
+
+      <div class="choice-cards">
+        <!-- Opción 1: La misma persona -->
+        <div class="choice-card-option active" id="option-same-borrower">
+          <div class="choice-radio-circle"></div>
+          <div class="choice-texts">
+            <strong id="label-same-name">Lucas Martínez</strong>
+            <span>La misma persona que la retiró</span>
+          </div>
+        </div>
+
+        <!-- Opción 2: Otra persona -->
+        <div class="choice-card-option" id="option-other-borrower">
+          <div class="choice-radio-circle"></div>
+          <div class="choice-texts">
+            <strong>Otra persona</strong>
+            <span>Un compañero u otro alumno la devuelve</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Campo de texto si elige otra persona -->
+      <div id="sheet-other-person-box">
+        <label class="field-label" for="input-other-name">
+          <span>Nombre de la persona que entrega</span>
+        </label>
+        <input type="text" class="native-input" id="input-other-name" placeholder="Escribe el nombre y apellido..." autocomplete="off">
+      </div>
+
+      <div class="sheet-actions">
+        <button type="button" class="btn-sheet-cancel" id="btn-cancel-return-sheet">Cancelar</button>
+        <button type="button" class="btn-sheet-submit" id="btn-submit-return-sheet">
+          Confirmar Devolución
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- HUD Toast Notificación -->
+  <div class="hud-toast" id="hud-toast">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="20 6 9 17 4 12"></polyline>
+    </svg>
+    <span id="hud-toast-text">Acción completada</span>
+  </div>
+
+  <!-- Librería SheetJS (Offline local) -->
+  <script src="lib/xlsx.full.min.js"></script>
+
+  <!-- Scripts de la Aplicación -->
+  <script src="js/db.js"></script>
+  <script src="js/excel.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
